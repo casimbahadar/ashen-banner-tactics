@@ -5,6 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <title>Ashen Banner Tactics Online</title>
+<!-- Added to a home screen, a page gets whatever the phone can find, which was
+     a screenshot of the title card. These give it the banner instead, and give
+     it a name short enough to read under the icon: the full title came out as
+     "AshenBannerTa...". -->
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ashen Banner">
+<meta name="application-name" content="Ashen Banner">
+<meta name="theme-color" content="#0d0f16">
 <!--
 ================================================================================
   CAMPAIGN v1  —  working title pending (Casim names it)
@@ -1239,9 +1253,9 @@ const WEAPON_KINDS=["sword","lance","axe","bow","dagger","staff","fire","wind","
 const ROLE={"sword":[[17,5,7,7,3,4,3],[55,35,50,50,30,20,22]],"lance":[[18,5,4,5,2,5,3],[60,40,35,35,25,25,22]],"axe":[[21,7,4,4,2,4,3],[70,50,35,30,25,20,20]],"bow":[[17,5,6,5,3,3,3],[55,40,50,40,30,15,22]],"dagger":[[16,4,8,8,4,3,4],[50,30,55,55,40,15,28]],"staff":[[15,4,4,5,6,2,7],[45,40,35,40,50,10,45]],"fire":[[16,6,5,6,3,2,6],[50,50,40,45,30,10,40]],"wind":[[16,5,6,7,3,2,6],[50,45,45,50,30,10,40]],"lightning":[[16,6,6,5,3,2,6],[50,48,48,40,30,10,38]],"light":[[16,6,5,5,5,2,7],[50,50,40,40,40,10,45]],"dark":[[17,7,4,4,2,3,7],[55,55,35,30,20,15,45]],"breath":[[20,7,5,4,3,6,6],[60,50,40,30,25,30,35]],"beast":[[19,7,6,6,3,4,3],[60,50,45,45,25,25,22]]};
 const CHASSIS={"inf":[5,[0,0,0,0,0,0,0],[0,0,0,0,0,0,0],[]],"arm":[4,[3,1,-1,-3,0,5,0],[10,5,-5,-15,-5,20,-5],["axe"]],"cav":[7,[1,0,-1,0,0,0,0],[5,0,-5,0,0,0,0],["lance"]],"fly":[7,[-2,-1,0,2,1,-2,4],[-5,-5,0,5,5,-10,10],["sword"]]};
 const GAIN={"sword":["axe"],"lance":["sword"],"axe":["bow"],"bow":["sword"],"dagger":["sword"],"staff":["light"],"fire":["wind","lightning"],"wind":["fire","staff"],"lightning":["fire","wind"],"light":["staff"],"dark":["staff","fire"],"breath":["sword"],"beast":["axe"]};
-const SINGLE_NAME={"inf":{"sword":"Blade","lance":"Lancer","axe":"Reaver","bow":"Archer","dagger":"Ninja","staff":"Healer","fire":"Adept","wind":"Windcaller","lightning":"Stormcaller","light":"Chanter","dark":"Warlock","breath":"Manakete","beast":"Beastkin"},"arm":{"sword":"Sword Warden","lance":"Warden","axe":"Axe Warden","bow":"Siege Archer","dagger":"Shadow Warden","staff":"Reliquary","fire":"Sentinel","wind":"Gale Sentinel","lightning":"Storm Sentinel","light":"Templar","dark":"Grave Knight","breath":"Bulwark Drake","beast":"Dire Beast"},"cav":{"sword":"Sword Rider","lance":"Rider","axe":"Axe Rider","bow":"Outrider","dagger":"Shadow Rider","staff":"Courier","fire":"Flame Knight","wind":"Zephyr Knight","lightning":"Bolt Knight","light":"Radiant Knight","dark":"Dread Knight","breath":"Drake Rider","beast":"Beast Rider"},"fly":{"sword":"Sky Blade","lance":"Skyrider","axe":"Drake","bow":"Sky Archer","dagger":"Sky Rogue","staff":"Sky Courier","fire":"Ember Wing","wind":"Gale Wing","lightning":"Storm Wing","light":"Seraph","dark":"Nightwing","breath":"Wyrm","beast":"Rocbeast"}};
-const SINGLE_PROMO={"inf":{"sword":"Duelist","lance":"Halberdier","axe":"Ravager","bow":"Marksman","dagger":"Assassin","staff":"Oracle","fire":"Magus","wind":"Windsage","lightning":"Stormsage","light":"Hierarch","dark":"Nightbound","breath":"Elder Manakete","beast":"Alpha"},"arm":{"sword":"Sword Bulwark","lance":"Bulwark","axe":"Axe Bulwark","bow":"Siege Master","dagger":"Shadow Bulwark","staff":"Reliquar","fire":"Paragon","wind":"Gale Paragon","lightning":"Storm Paragon","light":"Saint","dark":"Barrow Knight","breath":"Wall Drake","beast":"Dire Alpha"},"cav":{"sword":"Sword Royal","lance":"Lancer Royal","axe":"Axe Royal","bow":"Pathfinder","dagger":"Shadow Royal","staff":"Sister","fire":"Flame Marshal","wind":"Zephyr Marshal","lightning":"Bolt Marshal","light":"Radiant Marshal","dark":"Dread Marshal","breath":"Drake Marshal","beast":"Beast Marshal"},"fly":{"sword":"Sky Duelist","lance":"Windlance","axe":"Drake Lord","bow":"Sky Marksman","dagger":"Sky Assassin","staff":"Sky Sister","fire":"Ember Seraph","wind":"Gale Seraph","lightning":"Storm Seraph","light":"Exalted","dark":"Duskwing","breath":"Elder Wyrm","beast":"Roc Lord"}};
-const DUAL_NAME={"cav|lance|sword":["Knight Errant","Errant Royal"],"arm|axe|lance":["Bulwark Guard","Bulwark Marshal"],"cav|axe|lance":["Dragoon","Dragoon Royal"],"inf|axe|sword":["Freeblade","Free Champion"],"fly|axe|sword":["Sky Reaver","Sky Warlord"],"cav|bow|sword":["Ranger","Ranger Lord"],"fly|bow|lance":["Sky Skirmisher","Sky Vanguard"],"inf|axe|bow":["Huntsman","Master Huntsman"],"inf|dagger|sword":["Cutthroat","Shadowblade"],"arm|lance|sword":["Hold Guard","Hold Marshal"],"inf|fire|wind":["Elementalist","Grand Elementalist"],"arm|fire|lightning":["Stormcloak","Storm Warden"],"inf|light|staff":["Curate","High Curate"],"inf|dark|staff":["Necromancer","Archnecromancer"],"cav|fire|staff":["Valkyrie","High Valkyrie"],"cav|fire|sword":["Spellblade","Arch Spellblade"],"arm|axe|dark":["Grave Reaver","Grave Marshal"],"fly|lance|light":["Lightlance","Radiant Lance"],"inf|breath|sword":["Dragonblood","Elder Dragonblood"],"inf|axe|beast":["Houndmaster","Houndmaster Champion"],"fly|dagger|wind":["Windrunner","Gale Runner"],"inf|lance|sword":["Guard","Guard Champion"],"inf|bow|sword":["Skirmisher","Skirmish Champion"],"inf|staff|sword":["Blade Priest","Sanctifier"],"inf|fire|sword":["Cinder Knight","Cinder Champion"],"inf|sword|wind":["Swift","Swift Champion"],"inf|lightning|sword":["Storm Edge","Storm Champion"],"inf|light|sword":["Dawnblade","Dawn Champion"],"inf|dark|sword":["Nightblade","Night Champion"],"inf|beast|sword":["Wild Edge","Wild Champion"],"inf|axe|lance":["Pikebreaker","Pikebreaker Champion"],"inf|bow|lance":["Longreach","Longreach Champion"],"inf|dagger|lance":["Harrier","Harrier Champion"],"inf|lance|staff":["Vigil","Vigil Champion"],"inf|fire|lance":["Blazen Spear","Blazen Champion"],"inf|lance|wind":["Whistling Spear","Whistling Champion","Zephyr",null],"inf|lance|lightning":["Fulminant","Fulminant Champion"],"inf|lance|light":["Vigilant","Vigilant Champion"],"inf|dark|lance":["Mourner","Mourner Champion"],"inf|breath|lance":["Wyrmguard","Wyrmguard Champion"],"inf|beast|lance":["Feral Spear","Feral Champion"],"inf|axe|dagger":["Marauder","Marauder Champion"],"inf|axe|staff":["Bonesetter","Bonesetter Champion"],"inf|axe|fire":["Kilnsworn","Kilnsworn Champion"],"inf|axe|wind":["Gale Cleaver","Gale Champion"],"inf|axe|light":["Consecrant","Consecrant Champion"],"inf|axe|dark":["Butcher","Butcher Champion"],"inf|axe|breath":["Ironhide","Ironhide Champion"],"inf|axe|lightning":["Levinsmith","Levinsmith Champion"],"inf|bow|dagger":["Thief","Rogue"]};
+const SINGLE_NAME={"inf":{"sword":"Blade","lance":"Lancer","axe":"Reaver","bow":"Archer","dagger":"Ninja","staff":"Healer","fire":"Adept","wind":"Windcaller","lightning":"Stormcaller","light":"Chanter","dark":"Warlock","breath":"Manakete","beast":"Beastkin"},"arm":{"sword":"Sword Armour","lance":"Rampart","axe":"Juggernaut","bow":"Siege Archer","dagger":"Plated Dagger","staff":"Reliquary","fire":"Sentinel","wind":"Gale Sentinel","lightning":"Storm Sentinel","light":"Templar","dark":"Grave Knight","breath":"Bulwark Drake","beast":"Dire Beast"},"cav":{"sword":"Cavalier","lance":"Chevalier","axe":"Axe Rider","bow":"Outrider","dagger":"Shadow Rider","staff":"Courier","fire":"Flame Knight","wind":"Zephyr Knight","lightning":"Bolt Knight","light":"Radiant Knight","dark":"Dread Knight","breath":"Drake Rider","beast":"Beast Rider"},"fly":{"sword":"Sky Blade","lance":"Skyrider","axe":"Drake","bow":"Sky Archer","dagger":"Sky Rogue","staff":"Sky Courier","fire":"Ember Wing","wind":"Gale Wing","lightning":"Storm Wing","light":"Seraph","dark":"Nightwing","breath":"Wyrm","beast":"Rocbeast"}};
+const SINGLE_PROMO={"inf":{"sword":"Duelist","lance":"Halberdier","axe":"Ravager","bow":"Marksman","dagger":"Assassin","staff":"Oracle","fire":"Magus","wind":"Windsage","lightning":"Stormsage","light":"Hierarch","dark":"Nightbound","breath":"Elder Manakete","beast":"Alpha"},"arm":{"sword":"Sword Marshal","lance":"Lance Marshal","axe":"Axe Marshal","bow":"Bow Marshal","dagger":"Dagger Marshal","staff":"Staff Marshal","fire":"Fire Marshal","wind":"Wind Marshal","lightning":"Lightning Marshal","light":"Saint","dark":"Dark Marshal","breath":"Breath Marshal","beast":"Beast Marshal"},"cav":{"sword":"Sword Royal","lance":"Lance Royal","axe":"Axe Royal","bow":"Bow Royal","dagger":"Dagger Royal","staff":"Staff Royal","fire":"Fire Royal","wind":"Wind Royal","lightning":"Lightning Royal","light":"Light Royal","dark":"Dark Royal","breath":"Breath Royal","beast":"Beast Royal"},"fly":{"sword":"Sword Lord","lance":"Lance Lord","axe":"Axe Lord","bow":"Bow Lord","dagger":"Dagger Lord","staff":"Staff Lord","fire":"Fire Lord","wind":"Wind Lord","lightning":"Lightning Lord","light":"Light Lord","dark":"Dark Lord","breath":"Breath Lord","beast":"Beast Lord"}};
+const DUAL_NAME={"cav|lance|sword":["Knight Errant","Lance-Sword Royal"],"arm|axe|lance":["Bulwark Guard","Axe-Lance Marshal"],"cav|axe|lance":["Heavy Errant","Axe-Lance Royal"],"inf|axe|sword":["Freeblade","Axe-Sword Champion"],"fly|axe|sword":["Sky Reaver","Axe-Sword Lord"],"cav|bow|sword":["Outlander","Bow-Sword Royal"],"fly|bow|lance":["Sky Skirmisher","Bow-Lance Lord"],"inf|axe|bow":["Huntsman","Axe-Bow Champion"],"inf|dagger|sword":["Cutthroat","Dagger-Sword Champion"],"arm|lance|sword":["Gatekeeper","Lance-Sword Marshal"],"inf|fire|wind":["Elementalist","Fire-Wind Champion"],"arm|fire|lightning":["Stormcloak","Fire-Lightning Marshal"],"inf|light|staff":["Curate","Light-Staff Champion"],"inf|dark|staff":["Necromancer","Dark-Staff Champion"],"cav|fire|staff":["Valkyrie","Fire-Staff Royal"],"cav|fire|sword":["Spellblade","Fire-Sword Royal"],"arm|axe|dark":["Grave Reaver","Axe-Dark Marshal"],"fly|lance|light":["Lightlance","Lance-Light Lord"],"inf|breath|sword":["Dragonblood","Breath-Sword Champion"],"inf|axe|beast":["Houndmaster","Axe-Beast Champion"],"fly|dagger|wind":["Windrunner","Dagger-Wind Lord"],"inf|lance|sword":["Guard","Lance-Sword Champion"],"inf|bow|sword":["Skirmisher","Bow-Sword Champion"],"inf|staff|sword":["Blade Priest","Sanctifier"],"inf|fire|sword":["Cinder Knight","Fire-Sword Champion"],"inf|sword|wind":["Swift","Sword-Wind Champion"],"inf|lightning|sword":["Storm Edge","Lightning-Sword Champion"],"inf|light|sword":["Dawnblade","Light-Sword Champion"],"inf|dark|sword":["Nightblade","Dark-Sword Champion"],"inf|beast|sword":["Wild Edge","Beast-Sword Champion"],"inf|axe|lance":["Pikebreaker","Axe-Lance Champion"],"inf|bow|lance":["Longreach","Bow-Lance Champion"],"inf|dagger|lance":["Harrier","Dagger-Lance Champion"],"inf|lance|staff":["Vigil","Lance-Staff Champion"],"inf|fire|lance":["Blazen Spear","Fire-Lance Champion"],"inf|lance|wind":["Whistling Spear","Lance-Wind Champion","Zephyr",null],"inf|lance|lightning":["Fulminant","Lance-Lightning Champion"],"inf|lance|light":["Vigilant","Lance-Light Champion"],"inf|dark|lance":["Mourner","Dark-Lance Champion"],"inf|breath|lance":["Wyrmguard","Breath-Lance Champion"],"inf|beast|lance":["Feral Spear","Beast-Lance Champion"],"inf|axe|dagger":["Marauder","Axe-Dagger Champion"],"inf|axe|staff":["Bonesetter","Axe-Staff Champion"],"inf|axe|fire":["Kilnsworn","Axe-Fire Champion"],"inf|axe|wind":["Gale Cleaver","Axe-Wind Champion"],"inf|axe|light":["Consecrant","Axe-Light Champion"],"inf|axe|dark":["Butcher","Axe-Dark Champion"],"inf|axe|breath":["Ironhide","Axe-Breath Champion"],"inf|axe|lightning":["Levinsmith","Axe-Lightning Champion"],"inf|bow|dagger":["Thief","Rogue"],"inf|bow|fire":["Ashfletch","Bow-Fire Champion"],"inf|bow|wind":["Whisper","Bow-Wind Champion"],"inf|bow|lightning":["Levinshot","Bow-Lightning Champion"],"inf|bow|light":["Vigilant Dawn","Bow-Light Champion"],"inf|bow|dark":["Crowcaller","Bow-Dark Champion"],"inf|bow|breath":["Drakeshot","Bow-Breath Champion"],"inf|beast|bow":["Wildshot","Beast-Bow Champion"],"inf|bow|staff":["Quiet Hand","Bow-Staff Champion"],"inf|dagger|staff":["Maid","Dagger-Staff Champion"],"inf|dagger|fire":["Tinder","Dagger-Fire Champion"],"inf|dagger|wind":["Zephyrblade","Dagger-Wind Champion"],"inf|dagger|lightning":["Prickle","Dagger-Lightning Champion"],"inf|dagger|light":["Absolver","Dagger-Light Champion"],"inf|dagger|dark":["Shade","Dagger-Dark Champion"],"inf|breath|dagger":["Wyrmling","Breath-Dagger Champion"],"inf|beast|dagger":["Biter","Beast-Dagger Champion"],"inf|fire|staff":["Hearthkeeper","Fire-Staff Champion"],"inf|staff|wind":["Calming Breeze","Staff-Wind Champion"],"inf|lightning|staff":["Spark Deacon","Lightning-Staff Champion"],"inf|beast|staff":["Beastkeeper","Beast-Staff Champion"],"inf|breath|staff":["Scaled Mender","Breath-Staff Champion"],"inf|fire|lightning":["Conflagrant","Fire-Lightning Champion"],"inf|fire|light":["Pyre Saint","Fire-Light Champion"],"inf|dark|fire":["Lunar Flare","Dark-Fire Champion"],"inf|breath|fire":["Fire Hatchling","Fire Dragon"],"inf|beast|fire":["Scorchclaw","Beast-Fire Champion"],"inf|lightning|wind":["Sky Sunderer","Lightning-Wind Champion"],"inf|light|wind":["Solace","Light-Wind Champion"],"inf|dark|wind":["Hollowgale","Dark-Wind Champion"],"inf|breath|wind":["Wind Hatchling","Wind Dragon"],"inf|beast|wind":["Swiftclaw","Beast-Wind Champion"],"inf|breath|lightning":["Lightning Hatchling","Lightning Dragon"],"inf|light|lightning":["Halostorm","Light-Lightning Champion"],"inf|dark|lightning":["Thundershade","Dark-Lightning Champion"],"inf|beast|lightning":["Voltbeast","Beast-Lightning Champion"],"inf|dark|light":["Twilight Mage","Dark-Light Champion"],"inf|breath|light":["Light Hatchling","Light Dragon"],"inf|beast|light":["Blessed Beast","Beast-Light Champion"],"inf|breath|dark":["Dark Hatchling","Dark Dragon"],"inf|beast|dark":["Shadow Beast","Beast-Dark Champion"],"inf|beast|breath":["Primal","Beast-Breath Champion"],"arm|axe|sword":["Siege Guard","Axe-Sword Marshal"],"arm|bow|sword":["Watchtower","Bow-Sword Marshal"],"arm|dagger|sword":["Needlewall","Dagger-Sword Marshal"],"arm|staff|sword":["Plated Priest","Staff-Sword Marshal"],"arm|fire|sword":["Kiln Guard","Fire-Sword Marshal"],"arm|lightning|sword":["Conduit","Lightning-Sword Marshal"],"arm|light|sword":["Hallowed Plate","Light-Sword Marshal"],"arm|dark|sword":["Darkened Armour","Dark-Sword Marshal"],"arm|breath|sword":["Wyrm Warden","Breath-Sword Marshal"],"arm|beast|sword":["Armoured Swordbeast","Beast-Sword Marshal"],"arm|sword|wind":["Windbreak","Aeolian Guard"],"arm|lance|staff":["Cloister Guard","Lance-Staff Marshal"],"arm|fire|lance":["Forge Pikeman","Fire-Lance Marshal"],"arm|lance|lightning":["Arcpike","Lance-Lightning Marshal"],"arm|lance|light":["Sanctified Pikeman","Lance-Light Marshal"],"arm|dark|lance":["Umbral Knight","Dark-Lance Marshal"],"arm|breath|lance":["Iron Hatchling","Breath-Lance Marshal"],"arm|beast|lance":["Beast Lancer","Beast-Lance Marshal"],"arm|dagger|lance":["Stealth Knight","Dagger-Lance Marshal"],"arm|bow|lance":["Ballista","Bow-Lance Marshal"],"arm|lance|wind":["Gale Wall","Lance-Wind Marshal"],"arm|axe|bow":["Bow Breaker","Axe-Bow Marshal"],"arm|axe|dagger":["Quick Mauler","Axe-Dagger Marshal"],"arm|axe|staff":["Tithe Guard","Axe-Staff Marshal"],"arm|axe|fire":["Smelter","Axe-Fire Marshal"],"arm|axe|wind":["Windhewer","Axe-Wind Marshal"],"arm|axe|lightning":["Volt Breaker","Axe-Lightning Marshal"],"arm|axe|light":["Sanctum Hewer","Axe-Light Marshal"],"arm|axe|breath":["Hatchling Hewer","Axe-Breath Marshal"],"arm|axe|beast":["Beastmaul","Axe-Beast Marshal"],"arm|bow|dagger":["Sly Quiver","Bow-Dagger Marshal"],"arm|bow|staff":["Tithe Bow","Bow-Staff Marshal"],"arm|bow|fire":["Brand Bow","Bow-Fire Marshal"],"arm|bow|light":["Sanctum Bow","Bow-Light Marshal"],"arm|bow|dark":["Grave Quiver","Bow-Dark Marshal"],"arm|bow|breath":["Drake Archer","Bow-Breath Marshal"],"arm|beast|bow":["Houndwatcher","Beast-Bow Marshal"],"arm|bow|wind":["Weathervane Knight","Bow-Wind Marshal"],"arm|bow|lightning":["Stormquarreler","Bow-Lightning Marshal"],"arm|dagger|staff":["Shrive Guard","Dagger-Staff Marshal"],"arm|dagger|fire":["Cinder Plate","Dagger-Fire Marshal"],"arm|dagger|wind":["Armoured Shear","Dagger-Wind Marshal"],"arm|dagger|lightning":["Arc Point","Dagger-Lightning Marshal"],"arm|dagger|light":["Sanctum Knife","Dagger-Light Marshal"],"arm|dagger|dark":["Armoured Umbral Knife","Dagger-Dark Marshal"],"arm|breath|dagger":["Scaled Point","Breath-Dagger Marshal"],"arm|beast|dagger":["Armoured Beastknife","Beast-Dagger Marshal"],"arm|fire|staff":["Hearth Warden","Fire-Staff Marshal"],"arm|staff|wind":["Gale Vestment","Staff-Wind Marshal"],"arm|lightning|staff":["Spark Cloister","Lightning-Staff Marshal"],"arm|light|staff":["Sanctuary","Light-Staff Marshal"],"arm|dark|staff":["Crypt Guard","Dark-Staff Marshal"],"arm|breath|staff":["Hatchling Warden","Breath-Staff Marshal"],"arm|beast|staff":["Beast Priest","Beast-Staff Marshal"],"arm|fire|wind":["Firegale Knight","Fire-Wind Marshal"],"arm|fire|light":["Sunplate","Fire-Light Marshal"],"arm|breath|fire":["Forge Hatchling","Breath-Fire Marshal"],"arm|beast|fire":["Furnace Claw","Beast-Fire Marshal"],"arm|lightning|wind":["Iron Squall","Lightning-Wind Marshal"],"arm|light|wind":["Sunwind Guard","Light-Wind Marshal"],"arm|dark|wind":["Blightgale","Dark-Wind Marshal"],"arm|breath|wind":["Gale Hatchling","Breath-Wind Marshal"],"arm|beast|wind":["Galehound","Beast-Wind Marshal"],"arm|light|lightning":["Radiant Bolt Guard","Light-Lightning Marshal"],"arm|dark|lightning":["Dark Conduit","Dark-Lightning Marshal"],"arm|breath|lightning":["Bolt Hatchling","Breath-Lightning Marshal"],"arm|beast|lightning":["Arcbeast","Beast-Lightning Marshal"],"arm|dark|light":["Eclipse Guard","Dark-Light Marshal"],"arm|breath|light":["Solar Hatchling","Breath-Light Marshal"],"arm|beast|light":["Lightclaw","Beast-Light Marshal"],"arm|breath|dark":["Night Hatchling","Breath-Dark Marshal"],"arm|beast|dark":["Blightfang Plate","Beast-Dark Marshal"],"arm|beast|breath":["Iron Primal","Beast-Breath Marshal"],"arm|dark|fire":["Balefire Knight","Dark-Fire Marshal"],"cav|dagger|sword":["Road Agent","Dagger-Sword Royal"],"cav|staff|sword":["Chaplain Rider","Staff-Sword Royal"],"cav|sword|wind":["Windrider","Sword-Wind Royal"],"cav|lightning|sword":["Arc Errant","Lightning-Sword Royal"],"cav|light|sword":["Dawn Rider","Light-Sword Royal"],"cav|dark|sword":["Night Rider","Dark-Sword Royal"],"cav|breath|sword":["Wyrm Errant","Breath-Sword Royal"],"cav|beast|sword":["Wildrider","Beast-Sword Royal"],"cav|axe|sword":["Axe Errant","Axe-Sword Royal"],"cav|bow|lance":["Parthian","Bow-Lance Royal"],"cav|dagger|lance":["Quick Uhlan","Dagger-Lance Royal"],"cav|lance|staff":["Mercy Rider","Lance-Staff Royal"],"cav|fire|lance":["Firelance Rider","Fire-Lance Royal"],"cav|lance|wind":["Zephyr Rider","Lance-Wind Royal"],"cav|lance|lightning":["Bolt Rider","Lance-Lightning Royal"],"cav|lance|light":["Hallowed Rider","Lance-Light Royal"],"cav|dark|lance":["Grave Errant","Dark-Lance Royal"],"cav|breath|lance":["Dragon Lancer","Breath-Lance Royal"],"cav|beast|lance":["Wild Uhlan","Beast-Lance Royal"]};
 const SPRMAP={"inf":{"sword":"Blade","lance":"Lancer","axe":"Reaver","bow":"Archer","staff":"Healer","fire":"Adept","wind":"Adept","lightning":"Adept","light":"Chanter","dark":"Warlock","breath":"Dragon","beast":"Taguel","dagger":"InfDagger"},"arm":{"sword":"ArmorSword","lance":"ArmorLance","axe":"ArmorAxe","bow":"ArmorBow","staff":"ArmorStaff","fire":"ArmorMage","wind":"ArmorMage","lightning":"ArmorMage","light":"ArmorMage","dark":"ArmorMage","breath":"Dragon","beast":"Beast","dagger":"ArmorDagger"},"cav":{"sword":"CavSword","lance":"CavLance","axe":"CavAxe","bow":"Outrider","staff":"Courier","fire":"CavMage","wind":"CavMage","lightning":"CavMage","light":"CavMage","dark":"CavMage","breath":"Dragon","beast":"BeastCav","dagger":"CavDagger"},"fly":{"sword":"FlySword","lance":"Skyrider","axe":"Drake","bow":"FlyBow","staff":"FlyStaff","fire":"FlyMage","wind":"FlyMage","lightning":"FlyMage","light":"FlyMage","dark":"FlyMage","breath":"Dragon","beast":"FlyBeast","dagger":"FlyDagger"}};
 /* A single-weapon class promotes into a SPECIALIST: it keeps its one weapon
    and gains a mastery bonus instead of breadth — the Swordmaster / Berserker
@@ -1269,6 +1283,14 @@ const MASTERY_TEXT={
   dark:"+2 damage",breath:"+2 damage, +5 crit",beast:"+10 crit, +10 hit"};
 const CH_NOUN={inf:"Footman",arm:"Warden",cav:"Rider",fly:"Wing"};
 const CH_PROMO={inf:"Champion",arm:"Marshal",cav:"Royal",fly:"Lord"};
+/* A name chosen for one particular branch of one particular class, keyed by
+   the class and the kind of branch: broaden, deepen, ride, wing or master.
+   Written this way rather than by position, because the branches were
+   reshaped once already and a name keyed by its place in a list was quietly
+   lost when they were: Zephyr went missing that way. */
+const BRANCH_NAMES={
+  "Whistling Spear": {wing:"Zephyr", deepen:"Dragoon"}
+};
 const WBLURB={sword:"accurate and quick",lance:"steady line fighter",axe:"heavy, inaccurate",
  bow:"range 2 only; no adjacent counter",dagger:"fast and precise, weakest damage, outside the weapon triangle",
  staff:"heals; no attack until promotion",
@@ -1323,7 +1345,10 @@ const TREE={
 const PROMO_NOUN={
   inf:{broaden:"Champion", deepen:"Vanguard",  ride:"Chevalier",  wing:"Skyborne"},
   arm:{broaden:"Marshal",  deepen:"Ironclad",  ride:"Cataphract", wing:"Winged Guard"},
-  cav:{broaden:"Royal",    deepen:"Errant",  wing:"Skylord", master:"Paladin"},
+  /* "Errant" moved into the class names themselves (Knight Errant, Axe Errant,
+     Wyrm Errant), so the branch that deepens a mounted class needed its own
+     word back rather than colliding with them. */
+  cav:{broaden:"Royal",    deepen:"Freerider", wing:"Skylord", master:"Paladin"},
   fly:{broaden:"Lord",     deepen:"Sovereign", ride:"Groundlord", master:"Ace"}
 };
 
@@ -1501,7 +1526,7 @@ const CLASSES={}, CLASS_ORDER=[];
          name for the branch that keeps its footing, the branch that masters a
          weapon, and the branch that deepens its strengths. Anything left
          unwritten is composed from the weapons and the new footing. */
-      const written=(b.branchNames||{})[br.kind];
+      const written=(BRANCH_NAMES[b.name]||{})[br.kind]||(b.branchNames||{})[br.kind];
       const nm=written
         ? written
         : (br.kind==="broaden"&&br.to===b.move&&b.promo)
@@ -1702,7 +1727,7 @@ const CHAPTERS=[
   obj:{k:"rout"}, cap:3, turnLimit:5, teaches:"doubling",
   test:"Doubling. Four points of Speed over your target and you strike twice in one exchange. This one has the health to shrug off single blows inside the time you have; a fast unit ends it, a slow one does not.",
   flavour:"Big, slow, and in no hurry.",
-  foes:[{cls:"Warden",lv:4,w:"ilance",ai:"guard",x:3,y:2}],
+  foes:[{cls:"Rampart",lv:4,w:"ilance",ai:"guard",x:3,y:2}],
   deploy:[[3,5],[4,5]]},
 
  /* ---- from The Shieldwall: ground, and the wall itself ---- */
@@ -1720,8 +1745,8 @@ const CHAPTERS=[
   obj:{k:"rout"}, cap:5, turnLimit:10, teaches:"armour",
   test:"Armour. These have heavy Defence and almost no Resistance. Physical attackers will scratch at them all day; a single magic user cuts straight through, and a Hammer or Armourslayer counts double against them. If you built no answer to armour, this is the chapter that tells you.",
   flavour:"They stand shoulder to shoulder and wait.",
-  foes:[{cls:"Warden",lv:11,w:"ilance",ai:"guard",x:2,y:1},
-        {cls:"Warden",lv:11,w:"ilance",ai:"guard",x:4,y:2}],
+  foes:[{cls:"Rampart",lv:11,w:"ilance",ai:"guard",x:2,y:1},
+        {cls:"Rampart",lv:11,w:"ilance",ai:"guard",x:4,y:2}],
   deploy:[[3,5],[4,5],[2,5]]},
 
  /* ---- from Windward: hitting, and hitting what flies ---- */
@@ -1845,7 +1870,7 @@ const CHAPTERS=[
   test:"Commanders. A commander does not chase you - it holds its ground and waits, which means you choose when the fight starts and with whom. Kill it and the chapter ends, whatever else is still on the field.",
   flavour:"He has not moved from the gate in nine years.",
   foes:[{cls:"Sentinel",lv:20,w:"flame2",ai:"boss",x:3,y:1},
-        {cls:"Warden",lv:19,w:"slance",ai:"guard",x:2,y:4},
+        {cls:"Rampart",lv:19,w:"slance",ai:"guard",x:2,y:4},
         {cls:"Archer",lv:19,w:"sbow",ai:"guard",x:5,y:4}],
   deploy:[[3,7],[4,7],[2,7],[5,7]]},
 
@@ -1857,8 +1882,8 @@ const CHAPTERS=[
         /* Stalwart on purpose. This is the chapter that asks whether you
            brought an answer to armour, and leaving that to a one-in-eight roll
            meant it usually did not ask at all. */
-        {cls:"Warden",lv:20,w:"slance",ai:"guard",x:4,y:6,temper:"Stalwart"},
-        {cls:"Warden",lv:20,w:"slance",ai:"guard",x:5,y:6,temper:"Stalwart"},
+        {cls:"Rampart",lv:20,w:"slance",ai:"guard",x:4,y:6,temper:"Stalwart"},
+        {cls:"Rampart",lv:20,w:"slance",ai:"guard",x:5,y:6,temper:"Stalwart"},
         {cls:"Chanter",lv:20,w:"rad2",ai:"guard",x:4,y:5},
         {cls:"Skyrider",lv:19,w:"slance",ai:"charge",x:1,y:7},
         /* someone here carries an answer to armour, so a company that is all
@@ -2251,6 +2276,17 @@ function unequip(id,i){const u=G.units.find(x=>x.id===id),it=u.inv.splice(i,1)[0
    not change when its name does.
    -------------------------------------------------------------------------- */
 const RENAMED={
+  /* the armoured chassis, renamed a batch at a time */
+  "Warden":"Rampart", "Hold Guard":"Gatekeeper",
+  "Rider":"Chevalier", "Dragoon":"Heavy Errant", "Lance Rider":"Chevalier",
+  "Sword-Lance Warden":"Gatekeeper", "Sword-Axe Warden":"Siege Guard",
+  "Sword-Bow Warden":"Watchtower", "Sword-Dagger Warden":"Needlewall",
+  "Sword-Staff Warden":"Plated Priest", "Sword-Fire Warden":"Kiln Guard",
+  "Sword-Wind Warden":"Windbreak", "Sword-Lightning Warden":"Conduit",
+  "Sword-Light Warden":"Hallowed Plate", "Sword-Dark Warden":"Darkened Armour",
+  "Sword-Breath Warden":"Wyrm Warden", "Sword-Beast Warden":"Armoured Swordbeast",
+  "Sword Warden":"Sword Armour", "Lance Warden":"Rampart",
+  "Axe Warden":"Juggernaut", "Dagger Warden":"Plated Dagger",
   "Beastreaver":"Houndmaster",
   "Sword-Bow Footman":"Skirmisher",   "Sword-Staff Footman":"Blade Priest",
   "Sword-Fire Footman":"Cinder Knight","Sword-Wind Footman":"Swift",
@@ -2293,8 +2329,18 @@ function classLikeOldName(name){
 function repairClasses(list){
   let fixed=0;
   for(const u of (list||[])){
-    if(!u||CLASSES[u.cls]) continue;
-    const k=classKeyOf(u.cls)||classLikeOldName(u.cls);
+    if(!u) continue;
+    /* A retired name can be given to something else later: Dragoon was a
+       mounted class and is now a promoted one. A soldier who has not been
+       promoted but points at a promoted class can only be carrying the old
+       name, so that case is repaired too rather than being read as a
+       promotion nobody earned. */
+    const stale=CLASSES[u.cls]&&CLASSES[u.cls].tier==="promoted"&&!u.promoted&&RENAMED[u.cls];
+    if(CLASSES[u.cls]&&!stale) continue;
+    /* a stale name is followed through the rename map directly: looking it
+       up as a class would find the promotion that took it over */
+    const k=stale&&CLASSES[RENAMED[u.cls]] ? RENAMED[u.cls]
+          : (classKeyOf(u.cls)||classLikeOldName(u.cls));
     if(k){ u.cls=k; fixed++; }
   }
   return fixed;
