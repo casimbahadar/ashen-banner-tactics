@@ -9,6 +9,11 @@
      a screenshot of the title card. These give it the banner instead, and give
      it a name short enough to read under the icon: the full title came out as
      "AshenBannerTa...". -->
+<!-- What this page may load and talk to. It is one file with inline code, so
+     inline scripts and styles are allowed; everything else is held to this
+     site and the one server the online layer uses. If anything ever slips a
+     script onto the page, it has nowhere to send what it finds. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://iahddcqeeqdrdrxjyhvi.supabase.co; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
@@ -427,12 +432,15 @@ table.roster tbody tr:hover{background:var(--panel2)}
         style="flex:1;background:var(--panel2);border:1px solid var(--line);
         border-radius:7px;padding:.5em;color:var(--txt);font:inherit">
     </div>
+    <div id="fFilterBox">
     <div class="row spread" style="margin-bottom:4px">
-      <span class="xs dim">Weapons it should end up using</span>
+      <span class="xs dim">Show classes that use these weapons</span>
       <button class="sm" onclick="clearWepFilter()" style="padding:.15em .5em;font-size:.75rem">Any</button>
     </div>
     <div class="row wr" id="wepFilter" style="margin-bottom:6px"></div>
     <div class="row wr" id="moveFilter" style="margin-bottom:8px"></div>
+    </div>
+    <div class="xs dim" id="fLockedNote" style="display:none;margin-bottom:8px"></div>
     <select id="fClass" onchange="pickClass()"
       style="width:100%;background:var(--panel2);border:1px solid var(--line);
       border-radius:7px;padding:.55em;color:var(--txt);font:inherit"></select>
@@ -549,7 +557,11 @@ table.roster tbody tr:hover{background:var(--panel2)}
       <button class="sm" onclick="exportWorldMapJSON()">Data (JSON)</button>
     </div></div>
   <div class="card" style="padding:6px"><div id="worldMap"></div>
-    <div class="xs dim" style="padding:6px 4px 2px">Red is where you are, green is cleared,
+
+    <div id="realmBar" class="row wr" style="gap:5px;padding:6px 4px 0"></div>
+    <div id="realmLore" class="hidden" style="padding:8px 6px 2px"></div>
+    <div class="xs dim" id="worldKey" style="padding:6px 4px 2px">Chapters are numbered in the order you play them.
+      Red is where you are, green is cleared,
       blue is still ahead. Tap a location to open its brief.</div></div>
   <div class="card" id="chapList"></div>
 </section>
@@ -1283,6 +1295,24 @@ const MASTERY_TEXT={
   dark:"+2 damage",breath:"+2 damage, +5 crit",beast:"+10 crit, +10 hit"};
 const CH_NOUN={inf:"Footman",arm:"Warden",cav:"Rider",fly:"Wing"};
 const CH_PROMO={inf:"Champion",arm:"Marshal",cav:"Royal",fly:"Lord"};
+/* --------------------------------------------------------------------------
+   THE EIGHT PROVINCES of the written campaign. They were one kingdom under a
+   crown that fell nine years ago, and each entry says what that province did
+   when it fell, told through how its soldiers fight in the chapters you play
+   there. Which chapters those are is decided by the map, and test-worldmap
+   holds them in place so these stay true.
+   Deliberately left open: why the crown fell, who wore it, who rules now.
+   -------------------------------------------------------------------------- */
+const REALM_LORE={
+  "Reniien":"Reniien is a coast of estuaries and salt marsh, and it always looked to the sea before it looked to the crown. When the crown fell it shut its harbours and left the inland roads to whoever wanted them. You land here at the start, and you come back near the end for the marshes, where nothing crosses the water unless it flies.",
+  "Elelburn":"Elelburn cut timber for the crown's ships and halls, and its foresters carried axes long before anyone paid them to fight. When the crown fell the paying stopped and the axes stayed. What you meet there is strength without drill: big, slow men who swing hard and trust one blow to be enough.",
+  "Kesenmoor":"Kesenmoor was the crown's own land, and the crown kept its best soldiers close. Nine years after it fell they are still there: armour on the high ground, fliers over the grass, and the chantry that crowned the old kings. You fight five battles along its northern edge before you reach the capital at its heart.",
+  "Fenorae":"Fenorae kept the crown's hospitals, and its healers learned their trade on soldiers from every other province. When the crown fell they went on healing anyone who could hold a wall long enough to be carried behind it. Its towns are walled and gated, and the gates do not open to strangers.",
+  "Ostelmarch":"Ostelmarch is open grassland, the march that bred the crown's horses. When the crown fell its riders kept to their old work: strike, ride off, and strike again somewhere else. Nobody holds a line in Ostelmarch, and you learn there to hit and be gone before the answer comes.",
+  "Pelisae":"Pelisae is forest, and its people never fought the crown's way, in open lines. When the crown fell they went back under the trees, and they come out of them in numbers you cannot count from the open. In Pelisae there are always more of them than you can see.",
+  "Corisgard":"Corisgard holds the river crossings, and every army in this war has had to cross them. When the crown fell its people took no side and charged every side for the fords. You win nothing in Corisgard. You hold the crossing until the column is over, and then you leave.",
+  "Valmere":"Valmere guards the road into the capital, and when the crown fell it went on guarding it. Its duelling schools still turn out fighters quick enough to strike twice before you answer, and there are more of its soldiers than you will have arrows for. At the end of its road, a commander has held the capital's gate for nine years and has not moved from it."
+};
 /* A name chosen for one particular branch of one particular class, keyed by
    the class and the kind of branch: broaden, deepen, ride, wing or master.
    Written this way rather than by position, because the branches were
@@ -1896,11 +1926,33 @@ const CHAPTERS=[
 /* ==========================================================================
    STATE
    ========================================================================== */
+/* Every app on casimbahadar.github.io shares one browser storage, so a name
+   like "fe_maps" is a name another Fire Emblem project on the same site could
+   use as well, and whichever wrote last would win. Everything this game keeps
+   is under "abto:". A save written under an old name is moved the first time
+   it is read, so nobody loses a company to the change. */
+const LEGACY_KEYS={
+  "abto:save"  :"authored_growth_campaign_v1",
+  "abto:custom":"agc_custom_v1",
+  "abto:maps"  :"fe_maps",
+  "abto:zoom"  :"fe_zoom"
+};
 const store=(()=>{let mem={};
-  try{localStorage.setItem("__t","1");localStorage.removeItem("__t");
-    return{get:k=>localStorage.getItem(k),set:(k,v)=>localStorage.setItem(k,v)};}
+  try{localStorage.setItem("abto:__t","1");localStorage.removeItem("abto:__t");
+    return{
+      get:k=>{
+        let v=localStorage.getItem(k);
+        const old=LEGACY_KEYS[k];
+        if(v===null&&old){
+          const was=localStorage.getItem(old);
+          if(was!==null){ localStorage.setItem(k,was); localStorage.removeItem(old); v=was; }
+        }
+        return v;
+      },
+      set:(k,v)=>localStorage.setItem(k,v)
+    };}
   catch(e){return{get:k=>mem[k]??null,set:(k,v)=>{mem[k]=v}};}})();
-const SAVE_KEY="authored_growth_campaign_v1";
+const SAVE_KEY="abto:save";
 let G=load();
 /* JSON has no way to write Infinity: a worn weapon's endless uses are stored
    as null, and null is not greater than zero, so every check for "has this any
@@ -2032,7 +2084,7 @@ function go(id){
   if(id==="base")renderBase();
   if(id==="forgeShop")renderForge();
   if(id==="supports")renderSupports();
-  if(id==="chapters"){renderChapters();renderWorldMap();}
+  if(id==="chapters"){renderChapters();renderWorldMap();renderRealmBar();}
   if(id==="builder")renderBuilder();
   if(id==="bstory")storyOpen();
   if(id==="bmaps"){renderMapList();openLibrary();}
@@ -2415,11 +2467,16 @@ function renderPromoChoice(){
 
 /* --------------------------- FORGE / RESPEC --------------------------- */
 let F=null,EDIT=null;
+/* A campaign soldier keeps their class when rebuilt: the chapters test the
+   company you committed to. Only the practice company may change class. */
+function classLocked(){ return EDIT!==null && !practiceMode(); }
 function openForge(id){
   EDIT=id;
   if(id===null && G.units.length>=1 && G.gold<T.ENLIST_COST && G.units.length>=T.FREE_SLOTS)
     return toast("Not enough supply to enlist.");
-  const src=id!==null?G.units.find(u=>u.id===id):null;
+  /* the company that is open, not the campaign one regardless: rebuilding a
+     practice soldier found nobody and opened a fresh enlistment instead */
+  const src=id!==null?(unitStore().find(u=>u.id===id)||G.units.find(u=>u.id===id)):null;
   F=src?{name:src.name,cls:src.cls,captain:src.captain,mug:src.mug,
          bonusZ:{...src.bonusZ},bonusG:{...src.bonusG}}
        :{name:"",cls:"Lancer",captain:!rosterView().some(u=>u.captain),mug:null,bonusZ:{},bonusG:{}};
@@ -2427,7 +2484,18 @@ function openForge(id){
   for(const s of STATS){F.bonusZ[s]??=0;F.bonusG[s]??=0;}
   F.filter=new Set(); F.moveFilter=new Set(); F.withPromo=false;
   const sel=document.getElementById("fClass");
-  sel.disabled = id!==null;                       // respec keeps the class
+  sel.disabled = classLocked();                   // campaign respec keeps the class
+  /* With the class fixed, the filter has nothing to choose between, and
+     tapping one of its weapons used to swap the class out from under the
+     player: the points they chose were measured against a class they would
+     not end up as. So it is not shown at all, and the note says why. */
+  const fb=document.getElementById("fFilterBox"), ln=document.getElementById("fLockedNote");
+  if(fb) fb.style.display = classLocked() ? "none" : "";
+  if(ln){
+    ln.style.display = classLocked() ? "" : "none";
+    if(src) ln.textContent = `${src.name} stays a ${CLASSES[src.cls].name}. A respec in the campaign `
+      +`company changes their stats, name and portrait; switch to the practice company to try other classes.`;
+  }
   document.getElementById("fName").value=F.name;
   const cb=document.getElementById("fCap");
   cb.checked=F.captain;
@@ -2728,17 +2796,28 @@ function renderWepFilter(){
   };
 }
 function applyFilter(){
-  const list=matchingClasses();
-  if(!list.includes(F.cls)) F.cls=list[0]||F.cls;
+  /* A promoted soldier's class is not one a recruit can start as, so it was
+     missing from the list: in the practice company, opening Respec quietly
+     turned them back into the first class on it. Their own class always
+     stays on the list while they are being rebuilt. */
+  const found=matchingClasses();
+  const own=EDIT!==null&&CLASSES[F.cls]&&!found.includes(F.cls);
+  const list=own?[F.cls].concat(found):found;
+  /* never swap the class of a soldier whose class is fixed */
+  if(!list.includes(F.cls) && !classLocked()) F.cls=list[0]||F.cls;
   const sel=document.getElementById("fClass");
   sel.innerHTML=classOptions(F.cls,list);
   sel.value=F.cls;
   const bits=[];
   if(F.filter&&F.filter.size) bits.push([...F.filter].join(" + "));
   if(F.moveFilter&&F.moveFilter.size) bits.push([...F.moveFilter].map(m=>MOVE_LABEL[m]).join("/"));
-  document.getElementById("clsCount").textContent = bits.length
-    ? `${list.length} of ${CLASS_ORDER.length} classes \u00b7 ${bits.join(" \u00b7 ")}${F.withPromo?" (counting promotion)":" at level 1"}`
-    : `${CLASS_ORDER.length} classes. Tick two weapons to narrow the list.`;
+  /* counted against the classes a recruit can start as, which is what the
+     list offers, and not shown at all when there is no list to narrow */
+  const cc=document.getElementById("clsCount"), pool=baseClassKeys().length;
+  cc.style.display=classLocked()?"none":"";
+  cc.textContent = bits.length
+    ? `${found.length} of ${pool} classes \u00b7 ${bits.join(" \u00b7 ")}${F.withPromo?" (counting promotion)":" at level 1"}`
+    : `${pool} classes. Tick two weapons to narrow the list.`;
   renderWepFilter(); renderAlloc(); renderMugPick();
 }
 function clearWepFilter(){ F.filter=new Set(); F.moveFilter=new Set(); F.withPromo=false; applyFilter(); }
@@ -2933,13 +3012,27 @@ function customCost(plan){
     for(let i=1;i<=(plan[k]||0);i++) sum+=stepCost(k,i);
   return sum;
 }
+/* A name a player types for a weapon they forged. Weapon names used to come
+   only from the game's own table, so they were printed raw in eleven places;
+   once players could name them, every one of those became a way to put code
+   on the page. Rather than trust each of the eleven to remember, a forged name
+   is reduced to plain letters and punctuation that cannot form markup, here,
+   where it is made. */
+function cleanForgeName(raw){
+  return String(raw||"")
+    .replace(/'/g,"\u2019")                     // Sorrow's Edge keeps its apostrophe, as the curly one
+    .replace(/[<>&"`\\=\/{}\[\]]/g,"")       // nothing that can open a tag or attribute
+    .replace(/[\u0000-\u001f\u007f]/g,"")      // no control characters
+    .replace(/\s+/g," ").trim()
+    .slice(0,FORGE_NAME_MAX);
+}
 function customWeapon(baseId,plan,name){
   const b=WEAPONS[baseId];
   if(!b) return null;
   const d={mt:0,hit:0,crit:0,uses:0};
   for(const k in FORGE_STEP) d[k]=(plan[k]||0)*FORGE_STEP[k].each;
   return {...b,
-    name:(name||"").trim().slice(0,FORGE_NAME_MAX)||("Forged "+b.name),
+    name:cleanForgeName(name)||("Forged "+b.name),
     mt:Math.max(0,b.mt+d.mt),
     hit:Math.max(0,Math.min(100,b.hit+d.hit)),
     crit:Math.max(0,b.crit+d.crit),
@@ -3031,7 +3124,7 @@ function doForgeCustom(){
   const cost=customCost(FORGE_PLAN);
   if(G.gold<cost) return toast("Not enough supply.");
   if(!(G.stock[baseId]>0)) return toast("You have none in stores.");
-  const name=((document.getElementById("fgName")||{}).value||"").trim();
+  const name=cleanForgeName((document.getElementById("fgName")||{}).value);
   G.gold-=cost;
   G.stock[baseId]--; if(!G.stock[baseId]) delete G.stock[baseId];
   let n=1; while(allForged()[baseId+"#"+n]) n++;
@@ -3577,8 +3670,30 @@ function buildWorldMap(chapters,key,custom,cfg){
       x:(R.x+p.x*R.w)*W+(rnd()-0.5)*W*0.04,
       y:(R.y+p.y*R.h)*H+(rnd()-0.5)*H*0.04});
   }
-  const MIN=masses>1?Math.max(16,Math.min(28,W/(n*0.7))):Math.max(26,Math.min(46,W/(n*0.55)));
-  for(let pass=0;pass<80;pass++){
+  /* Spread each landmass's chapters across that landmass. They used to be laid
+     along a curve through the middle and only nudged apart, so eighteen
+     chapters filled less than half the width of a continent that filled most
+     of the canvas, and their names had nowhere to go. Each group is stretched
+     to fill most of its own ellipse, then held inside it so nothing is pushed
+     out to sea. */
+  const inEllipse=(nd)=>{
+    const R=regionOf(nd.g||0);
+    const cx=R.cx*W, cy=R.cy*H, ax=R.rx*W*0.80, ay=R.ry*H*0.74;
+    const ux=(nd.x-cx)/ax, uy=(nd.y-cy)/ay, k=Math.hypot(ux,uy);
+    if(k>1){ nd.x=cx+ux/k*ax; nd.y=cy+uy/k*ay; }
+  };
+  for(let g=0;g<masses;g++){
+    const grp=nodes.filter(nd=>nd.g===g);
+    if(grp.length<3) continue;
+    const R=regionOf(g);
+    const xs=grp.map(d=>d.x), ys=grp.map(d=>d.y);
+    const mx=(Math.min(...xs)+Math.max(...xs))/2, my=(Math.min(...ys)+Math.max(...ys))/2;
+    const ex=Math.max(...xs)-Math.min(...xs), ey=Math.max(...ys)-Math.min(...ys);
+    const sx=ex>1?Math.max(1,(R.rx*W*1.45)/ex):1, sy=ey>1?Math.max(1,(R.ry*H*1.30)/ey):1;
+    for(const d of grp){ d.x=R.cx*W+(d.x-mx)*sx; d.y=R.cy*H+(d.y-my)*sy; inEllipse(d); }
+  }
+  const MIN=masses>1?Math.max(22,Math.min(38,W/(n*0.55))):Math.max(34,Math.min(60,W/(n*0.45)));
+  for(let pass=0;pass<120;pass++){
     let moved=false;
     for(let i=0;i<n;i++) for(let j=i+1;j<n;j++){
       const a=nodes[i],b=nodes[j];
@@ -3592,8 +3707,55 @@ function buildWorldMap(chapters,key,custom,cfg){
       const R=regionOf(nd.g||0);
       nd.x=Math.max((R.x+0.01)*W,Math.min((R.x+R.w-0.01)*W,nd.x));
       nd.y=Math.max((R.y+0.01)*H,Math.min((R.y+R.h-0.01)*H,nd.y));
+      inEllipse(nd);                        // and inside the land itself
     }
     if(!moved) break;
+  }
+  /* A march on a capital. The spots stay where they are; what changes is the
+     order the chapters visit them in. The first chapter takes the spot
+     furthest out toward the coast, the last takes the one nearest the middle
+     of the land, and each chapter between goes to the nearest spot still
+     free, leaning inward. The map used to put the first chapter at the heart
+     of the continent and the last in a corner, so it read backwards. Only for
+     a single landmass: on several islands the order follows the islands. */
+  if(masses===1 && n>=4){
+    const R=regionOf(0), cx=R.cx*W, cy=R.cy*H;
+    const pts=nodes.map(nd=>({x:nd.x,y:nd.y}));
+    const rad=p=>Math.hypot((p.x-cx)/(R.rx*W),(p.y-cy)/(R.ry*H));
+    let endIdx=0, startIdx=0;
+    pts.forEach((p,i)=>{ if(rad(p)<rad(pts[endIdx])) endIdx=i; });
+    startIdx=endIdx===0?1:0;
+    pts.forEach((p,i)=>{ if(i!==endIdx&&rad(p)>rad(pts[startIdx])) startIdx=i; });
+    /* The shortest road between the two ends. Start from a nearest-free-spot
+       walk, then untangle it: wherever two stretches of road cross or a
+       detour can be cut, reverse the stretch between them, until nothing
+       improves. The ends stay fixed. A spiral was tried first and measured
+       half again as long, with four places the road crossed itself. */
+    const D=(a,b)=>Math.hypot(pts[a].x-pts[b].x,pts[a].y-pts[b].y);
+    const order=[startIdx], left=new Set(pts.map((_,k)=>k));
+    left.delete(startIdx); left.delete(endIdx);
+    while(left.size){
+      const cur=order[order.length-1];
+      let best=null,bd=Infinity;
+      for(const k of left){ const d=D(cur,k); if(d<bd){bd=d;best=k;} }
+      order.push(best); left.delete(best);
+    }
+    order.push(endIdx);
+    for(let pass=0;pass<200;pass++){
+      let better=false;
+      for(let a=1;a<order.length-2;a++) for(let b=a+1;b<order.length-1;b++){
+        const before=D(order[a-1],order[a])+D(order[b],order[b+1]);
+        const after =D(order[a-1],order[b])+D(order[a],order[b+1]);
+        if(after<before-0.01){
+          const mid=order.slice(a,b+1).reverse();
+          order.splice(a,mid.length,...mid); better=true;
+        }
+      }
+      if(!better) break;
+    }
+    order.pop();                               // the end is put back below
+    order.push(endIdx);
+    order.forEach((pi,k)=>{ nodes[k].x=pts[pi].x; nodes[k].y=pts[pi].y; });
   }
   // grow land around every node and along the route between them: guarantees one mass
   const blob=(cx,cy,r)=>{
@@ -3949,6 +4111,38 @@ function exportWorldMapJSON(){
   wmDownload(new Blob([JSON.stringify(out)],{type:"application/json"}), wmFileName("json"));
   toast("World map data saved as JSON.");
 }
+/* The provinces of the written campaign, as a row under the map. Only there:
+   a campaign someone builds draws its countries' names at random, and has no
+   lore to show. */
+function renderRealmBar(){
+  const bar=document.getElementById("realmBar"), box=document.getElementById("realmLore");
+  if(!bar) return;
+  const M=LAST_WM&&LAST_WM.map;
+  if(ACTIVE||!M||!M.realms){ bar.innerHTML=""; if(box) box.classList.add("hidden"); return; }
+  /* in the order you first reach each province, which is the order of the war */
+  const firstAt=n=>{ const nd=M.nodes.find(x=>x.realm===n); return nd?nd.i:999; };
+  const names=M.realms.map(r=>r.name).filter(n=>REALM_LORE[n]).sort((a,b)=>firstAt(a)-firstAt(b));
+  bar.innerHTML=names.length
+    ? `<span class="xs dim" style="margin-right:2px">Provinces</span>`
+      +names.map(n=>`<button class="sm" onclick="showRealm('${esc(n)}')">${esc(n)}</button>`).join("")
+    : "";
+}
+function showRealm(name){
+  const box=document.getElementById("realmLore");
+  if(!box||!REALM_LORE[name]) return;
+  if(box.dataset.open===name&&!box.classList.contains("hidden")){
+    box.classList.add("hidden"); box.dataset.open=""; return;        // a second tap closes it
+  }
+  const M=LAST_WM&&LAST_WM.map;
+  const here=(M?M.nodes:[]).filter(nd=>nd.realm===name).map(nd=>`${nd.i+1}. ${esc(nd.name)}`);
+  box.innerHTML=`<div class="row spread" style="align-items:baseline">
+      <b style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:1.05rem">${esc(name)}</b>
+      <button class="sm" onclick="showRealm('${esc(name)}')">Close</button></div>
+    <p style="margin:6px 0">${esc(REALM_LORE[name])}</p>
+    ${here.length?`<div class="xs dim">Fought here: ${here.join(", ")}</div>`:""}`;
+  box.dataset.open=name;
+  box.classList.remove("hidden");
+}
 function renderWorldMap(hostId,listOverride,mapOverride,nameOverride){
   const host=document.getElementById(hostId||"worldMap"); if(!host) return;
   const list=listOverride||activeChapters();
@@ -4026,11 +4220,9 @@ function renderWorldMap(hostId,listOverride,mapOverride,nameOverride){
         if(d<bd){bd=d;lx=px;ly=py;}
       }
     }
-    realmLabels.push(`<text x="${lx*C}" y="${ly*C}" font-size="${fs}"
-      text-anchor="middle" fill="#3a1208" font-family="Georgia,'Times New Roman',serif"
-      font-style="italic" font-weight="bold" letter-spacing="1.8"
-      paint-order="stroke" stroke="${OWTILES.parch}" stroke-width="${(fs*0.42).toFixed(1)}"
-      stroke-linejoin="round" stroke-linecap="round">${name}</text>`);
+    /* placed later, once the chapter names have taken their spots, so the
+       region name is the one that moves rather than the chapter */
+    realmLabels.push({x:lx*C, y:ly*C, fs, name, cells:(cells[k]||[]).map(([px,py])=>[px*C,py*C])});
   }
   const img=(t,x,y,w,h)=>`<image href="${t.d}" x="${x}" y="${y}" width="${w}" height="${h}" style="image-rendering:pixelated"/>`;
   const mtnArt=(m.mountains||[]).map(p=>{const t=pick(OWTILES.mountain),sc=(p.s*2.4)/t.h;
@@ -4048,6 +4240,41 @@ function renderWorldMap(hostId,listOverride,mapOverride,nameOverride){
   }
   const labelSize=Math.max(7.5,Math.min(12,Math.round(7*(m.W/300))));
   const townSize=Math.max(5.5,Math.min(9,Math.round(5.2*(m.W/300))));
+  /* --------------------------------------------------------------------
+     LABELS THAT DO NOT LAND ON EACH OTHER. Chapter names, region names and
+     town names used to be drawn wherever they fell, so on a crowded map they
+     piled up until none could be read. Each now claims a box, and anything
+     placed later has to find a spot clear of every box already claimed.
+     Chapters go first because they are the ones you tap; region names move
+     out of their way; a town name that cannot fit is simply left off, since
+     the town itself is still drawn.
+     -------------------------------------------------------------------- */
+  const claimed=[];
+  const widthOf=(text,fs,bold,spacing)=>
+    String(text).length*fs*(bold?0.58:0.52)+String(text).length*(spacing||0);
+  const boxFor=(x,y,text,fs,anchor,bold,spacing)=>{
+    const w=widthOf(text,fs,bold,spacing), pad=fs*0.24;
+    const left=anchor==="start"?x:anchor==="end"?x-w:x-w/2;
+    return {l:left-pad, r:left+w+pad, t:y-fs*0.82-pad, b:y+fs*0.24+pad};
+  };
+  const overlap=(a,b)=>Math.max(0,Math.min(a.r,b.r)-Math.max(a.l,b.l))
+                      *Math.max(0,Math.min(a.b,b.b)-Math.max(a.t,b.t));
+  const inside=bx=>bx.l>=1&&bx.r<=m.W-1&&bx.t>=1&&bx.b<=m.H-1;
+  const clash=bx=>claimed.reduce((n,c)=>n+overlap(bx,c),0)+(inside(bx)?0:1e6);
+  const choose=(cands)=>{
+    let best=null,bs=Infinity;
+    for(const c of cands){ const sc=clash(c.box); if(sc===0) return c; if(sc<bs){bs=sc;best=c;} }
+    return best;
+  };
+  /* every castle and marker is something a name must not cover. Their real
+     size, not a guess: the castle is always scaled to 14 across its longer
+     side, and each marker's size is fixed by its kind. */
+  for(const nd of m.nodes){
+    const col=cleared(nd.i)?"green":current(nd.i)?"red":"blue";
+    const mk=(MAPTILES[col]&&MAPTILES[col][nodeRole(nd.i,m.nodes.length)])||MAPTILES.blue.town;
+    const mw=mk.w*0.55, mh=mk.h*0.55, half=Math.max(7,mw/2)+1.5;
+    claimed.push({l:nd.x-half, r:nd.x+half, t:nd.y-14-2.5, b:nd.y+1.25+mh+1.5});
+  }
   const marks=m.nodes.map(nd=>{
     const col=cleared(nd.i)?"green":current(nd.i)?"red":"blue";
     const role=nodeRole(nd.i,m.nodes.length);
@@ -4066,11 +4293,98 @@ function renderWorldMap(hostId,listOverride,mapOverride,nameOverride){
       ${img(marker,nd.x-mw/2,markY,mw,mh)}
       ${current(nd.i)?`<circle cx="${nd.x}" cy="${nd.y}" r="${Math.max(kh,mh)+3}" fill="none"
         stroke="#8c2f22" stroke-width="1.2"/>`:""}
-      <text x="${nd.x}" y="${markY+mh+labelSize*0.95}" font-size="${labelSize}" text-anchor="middle"
+      ${(()=>{
+        /* numbered, so the order of the campaign can be read off the map
+           without knowing which colour means what */
+        const label=(nd.i+1)+". "+String(nd.name||"").slice(0,28), half=Math.max(kw,mw)/2;
+        const below=markY+mh+labelSize*0.95, above=keepY-labelSize*0.3;
+        const mid=nd.y+labelSize*0.35;
+        const cands=[
+          {x:nd.x, y:below, a:"middle"},
+          {x:nd.x, y:above, a:"middle"},
+          {x:nd.x+half+3, y:mid, a:"start"},
+          {x:nd.x-half-3, y:mid, a:"end"},
+          {x:nd.x, y:below+labelSize*1.05, a:"middle"},
+          {x:nd.x, y:above-labelSize*1.05, a:"middle"},
+          {x:nd.x+half+3, y:below, a:"start"},
+          {x:nd.x-half-3, y:below, a:"end"},
+          {x:nd.x+half+3, y:above, a:"start"},
+          {x:nd.x-half-3, y:above, a:"end"}
+        ];
+        /* Where the map is crowded, further out, with a line back to the
+           marker so it is still plain which name belongs to which castle. */
+        const lh=labelSize*1.15;
+        for(const k of [2,3,4]){
+          cands.push({x:nd.x, y:below+lh*k, a:"middle", far:true});
+          cands.push({x:nd.x, y:above-lh*k, a:"middle", far:true});
+          for(const yy of [mid, below, above, below+lh, above-lh]){
+            cands.push({x:nd.x+half+3+k*10, y:yy, a:"start", far:true});
+            cands.push({x:nd.x-half-3-k*10, y:yy, a:"end", far:true});
+          }
+        }
+        const scored=cands.map(c=>({...c, box:boxFor(c.x,c.y,label,labelSize,c.a,true)}));
+        /* a few square pixels where two halos touch cannot be seen; anything
+           more than that can */
+        const ok=c=>clash(c.box)<10;
+        const c=scored.find(ok)||choose(scored);
+        claimed.push(c.box);
+        const lead=c.far?(()=>{
+          const bx=c.box, px=Math.max(bx.l,Math.min(nd.x,bx.r)), py=Math.max(bx.t,Math.min(nd.y,bx.b));
+          return `<line x1="${nd.x}" y1="${nd.y}" x2="${px}" y2="${py}" stroke="#211408"
+            stroke-width="0.7" stroke-dasharray="1.5 1.5" opacity="0.55"/>`;
+        })():"";
+        return `${lead}<text x="${c.x}" y="${c.y}" font-size="${labelSize}" text-anchor="${c.a}"
         fill="#211408" font-family="Georgia,'Times New Roman',serif" font-weight="bold"
         paint-order="stroke" stroke="${OWTILES.parch}" stroke-width="${(labelSize*0.42).toFixed(1)}"
-        stroke-linejoin="round" stroke-linecap="round">${esc(nd.name).slice(0,28)}</text>
+        stroke-linejoin="round" stroke-linecap="round">${esc(label)}</text>`;
+      })()}
     </g>`;
+  }).join("");
+  /* Every country is named. A name tries the middle of its country first,
+     then anywhere else inside its own borders, nearest the middle first, and
+     only then a smaller size; it no longer gives up after a handful of spots
+     near the centre, which is how two of the eight went missing. The smallest
+     regions are placed first, since they have the fewest places to go. */
+  /* Each chapter's country, recorded on the map so the rest of the game can
+     ask: lore written about a country has to match the chapters fought there,
+     and that is decided here, by geography. */
+  m.realms=realmLabels.map(r=>({name:r.name,x:r.x,y:r.y,size:r.cells.length}));
+  for(const nd of m.nodes){
+    let best=null,bd=Infinity;
+    for(const rl of realmLabels) for(const [x,y] of rl.cells){
+      const d=(x-nd.x)*(x-nd.x)+(y-nd.y)*(y-nd.y); if(d<bd){bd=d;best=rl.name;}
+    }
+    nd.realm=best;
+  }
+  const realmOrder=realmLabels.slice().sort((a,b)=>a.cells.length-b.cells.length);
+  const realmText=new Map();
+  for(const rl of realmOrder){
+    const spots=rl.cells.slice().sort((a,b)=>
+      Math.hypot(a[0]-rl.x,a[1]-rl.y)-Math.hypot(b[0]-rl.x,b[1]-rl.y));
+    const step=Math.max(1,Math.floor(spots.length/260));
+    const near=[[rl.x,rl.y]].concat(spots.filter((_,i)=>i%step===0));
+    let done=null;
+    for(const scale of [1,0.88,0.76,0.66]){
+      const fs=Math.max(6,rl.fs*scale);
+      for(const [x,y] of near){
+        const box=boxFor(x,y+fs*0.35,rl.name,fs,"middle",true,1.8);
+        if(clash(box)===0){ done={x,y:y+fs*0.35,fs,box}; break; }
+      }
+      if(done) break;
+    }
+    if(done){ claimed.push(done.box); realmText.set(rl,done); }
+  }
+  const realmArt=realmLabels.map(rl=>{
+    const d=realmText.get(rl);
+    if(d){
+      return `<text x="${d.x}" y="${d.y}" font-size="${d.fs}"
+      text-anchor="middle" fill="#3a1208" font-family="Georgia,'Times New Roman',serif"
+      font-style="italic" font-weight="bold" letter-spacing="1.8"
+      paint-order="stroke" stroke="${OWTILES.parch}" stroke-width="${(d.fs*0.42).toFixed(1)}"
+      stroke-linejoin="round" stroke-linecap="round">${esc(rl.name)}</text>`;
+    }
+    /* nowhere at all inside its borders: the borders still show the country */
+    return "";                               // the borders still show where the region is
   }).join("");
   const rt=mulberry(seedFrom(key+"|towns|"+(m.labelSeed||1)));
   const townArt=(m.settlements||[]).map(p=>{
@@ -4078,19 +4392,22 @@ function renderWorldMap(hostId,listOverride,mapOverride,nameOverride){
     const sc=(p.big?9:6)/Math.max(t.w,t.h);
     const w=t.w*sc,h=t.h*sc;
     const nm=townName(rt);
+    const tb=boxFor(p.x,p.y+h/2+townSize,nm,townSize,"middle",false);
+    const fits=clash(tb)===0;
+    if(fits) claimed.push(tb);
     return `<g opacity="0.92">
       ${img(t,p.x-w/2,p.y-h/2,w,h)}
-      <text x="${p.x}" y="${p.y+h/2+townSize}" font-size="${townSize}" text-anchor="middle"
+      ${fits?`<text x="${p.x}" y="${p.y+h/2+townSize}" font-size="${townSize}" text-anchor="middle"
         fill="#241708" font-family="Georgia,'Times New Roman',serif"
         paint-order="stroke" stroke="${OWTILES.parch}" stroke-width="${(townSize*0.42).toFixed(1)}"
-        stroke-linejoin="round">${nm}</text></g>`;
+        stroke-linejoin="round">${esc(nm)}</text>`:""}</g>`;
   }).join("");
   host.innerHTML=`<svg viewBox="0 0 ${m.W} ${m.H}" width="100%" style="display:block;border-radius:6px">
     <rect width="${m.W}" height="${m.H}" fill="${OWTILES.parch}"/>
     <g shape-rendering="crispEdges">${body}</g>
     <g stroke="${LANDFILL.ink}" stroke-width="1.4" shape-rendering="crispEdges" opacity="0.9">${coast}</g>
     <g stroke="#8c3b2a" stroke-width="1" stroke-dasharray="3 2" opacity="0.6" shape-rendering="crispEdges">${borders}</g>
-    ${riverArt}${treeArt}${mtnArt}${townArt}${realmLabels.join("")}${roads}${marks}
+    ${riverArt}${treeArt}${mtnArt}${townArt}${realmArt}${roads}${marks}
     <rect x="0.5" y="0.5" width="${m.W-1}" height="${m.H-1}" fill="none" stroke="${LANDFILL.ink}" stroke-width="1" opacity="0.45"/>
   </svg>`;
 }
@@ -5516,6 +5833,7 @@ function dispatch(a){
   return okA;
 }
 function uiEndPhase(){
+  if(!inBattle()) return;          // the online version of End phase, guarded like the other
   if(B.net&&B.side===0){
     if(B.actSquad!==B.net.seat) return;
     dispatch({t:"e"});
@@ -6454,7 +6772,7 @@ function touchScreen(){
 }
 function loadZoom(){
   let z=null;
-  try{ z=parseFloat(localStorage.getItem("fe_zoom")); }catch(e){}
+  try{ z=parseFloat(store.get("abto:zoom")); }catch(e){}
   /* 43px squares on a phone, which clears the 44 that Apple and Google both
      recommend once the border is counted; a desktop starts larger still,
      because there is room and the board is the reason to be there */
@@ -6465,7 +6783,7 @@ let BOARDZOOM=loadZoom();
 function applyZoom(){
   const w=document.getElementById("boardWrap");
   if(w&&w.style) w.style.zoom=String(BOARDZOOM);
-  try{ localStorage.setItem("fe_zoom",String(BOARDZOOM)); }catch(e){}
+  try{ store.set("abto:zoom",String(BOARDZOOM)); }catch(e){}
   const lbl=document.getElementById("zoomLbl");
   if(lbl) lbl.textContent=Math.round(BOARDZOOM*100)+"%";
 }
@@ -7517,7 +7835,7 @@ function finish(won,why){
    Custom campaigns carry their own map rows, explicit enemy positions and
    deploy tiles, so they don't depend on the built-in MAPS table at all.
    ========================================================================== */
-const CK="agc_custom_v1";
+const CK="abto:custom";
 let CUST=(()=>{try{const r=store.get(CK);return r?JSON.parse(r):[];}catch(e){return [];}})();
 function saveCust(){try{store.set(CK,JSON.stringify(CUST));}catch(e){}}
 let ACTIVE=null;                    // null = the built-in campaign
@@ -7594,7 +7912,7 @@ function loadMaps(){
   /* if storage is unavailable or empty, keep whatever is already in memory:
      wiping it would lose a map the player just imported */
   try{
-    const raw=localStorage.getItem("fe_maps");
+    const raw=store.get("abto:maps");
     if(raw) IMPMAPS=JSON.parse(raw)||IMPMAPS;
   }catch(e){}
   return IMPMAPS;
@@ -7606,7 +7924,7 @@ function allMaps(){
   return BUILTIN_MAPS.concat(IMPMAPS.filter(m=>!m.builtin));
 }
 function saveMaps(){
-  try{ localStorage.setItem("fe_maps",JSON.stringify(IMPMAPS)); }catch(e){}
+  try{ store.set("abto:maps",JSON.stringify(IMPMAPS)); }catch(e){}
 }
 function mapById(id){
   if(id===undefined||id===null) return null;
