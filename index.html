@@ -546,6 +546,15 @@ body.instory .notstory{display:none}
 .u-c-yellow{background:linear-gradient(#e2c35a,#a8862a);border:1px solid #f0d77e}
 .u-c-orange{background:linear-gradient(#e8954a,#b25a1e);border:1px solid #f2b47a}
 .u-c-green{background:linear-gradient(#6fc08a,#2f8054);border:1px solid #8fd6a6}
+
+/* the builder's enemy picker: tiles with each class's figure and name */
+.fp{width:100%}
+.fpgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:6px;margin-top:8px;max-height:260px;overflow-y:auto}
+.foetile{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 2px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);cursor:pointer;min-height:64px}
+.foetile.on{border-color:var(--gold,#d4a83a);box-shadow:0 0 0 1px var(--gold,#d4a83a) inset}
+.foetile span{font-size:11px;line-height:1.15;text-align:center;word-break:break-word}
+.foefig{width:44px;height:40px;display:flex;align-items:flex-end;justify-content:center;overflow:hidden}
+.foefig>div{flex:none}
 </style>
 </head>
 <body>
@@ -1409,8 +1418,8 @@ body.instory .notstory{display:none}
   </div>
   </div>
   <div class="row wr" style="gap:8px;margin:8px 0 20px">
-    <button class="sm" onclick="edResize(-1)">Shorter</button>
-    <button class="sm" onclick="edResize(1)">Taller</button>
+    <label class="xs dim" style="align-self:center">Width <input id="edW" type="number" min="5" max="40" inputmode="numeric" onchange="edSetSize(+this.value,null)" style="width:64px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:.3em;color:var(--txt);font:inherit"></label>
+    <label class="xs dim" style="align-self:center">Height <input id="edH" type="number" min="5" max="40" inputmode="numeric" onchange="edSetSize(null,+this.value)" style="width:64px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:.3em;color:var(--txt);font:inherit"></label>
     <button class="sm" onclick="edClear()">Clear map</button>
     <span class="xs dim" id="edStats" style="align-self:center"></span>
   </div>
@@ -10068,6 +10077,7 @@ function editChapter(i){
   document.getElementById("edObj").value=ch.obj.k;
   document.getElementById("edCap").value=ch.cap;
   document.getElementById("edTurns").value=ch.turnLimit||0;
+  { const a=document.getElementById("edW"), b=document.getElementById("edH"); if(a) a.value=ch.w; if(b) b.value=ch.h; }
   renderChapterMapPick(); renderEditorTiles();
   renderTools(); drawEditor(); go("bedit");
 }
@@ -10107,10 +10117,8 @@ function renderTools(){
     const kinds=CLASSES[ED.foe.cls].wep;
     const wl=Object.values(WEAPONS).filter(w=>kinds.includes(w.kind));
     if(!wl.some(w=>w.id===ED.foe.w)) ED.foe.w=wl[0].id;
-    sub.innerHTML=
-      `<select onchange="ED.foe.cls=this.value;renderTools()" style="background:var(--panel2);
-        border:1px solid var(--line);border-radius:8px;padding:.3em;color:var(--txt);font:inherit;font-size:.875rem">
-        ${classOptions(ED.foe.cls,CLASS_ORDER)}</select>
+    sub.innerHTML=foePickerHTML()+
+      `<div class="xs" style="width:100%;margin:6px 0 2px">Placing <b>${esc(CLASSES[ED.foe.cls].name)}</b></div>
        <select onchange="ED.foe.w=this.value" style="background:var(--panel2);border:1px solid var(--line);
         border-radius:8px;padding:.3em;color:var(--txt);font:inherit;font-size:.875rem">
         ${wl.map(w=>`<option value="${w.id}" ${w.id===ED.foe.w?'selected':''}>${w.name}</option>`).join("")}</select>
@@ -10203,19 +10211,73 @@ function edTap(x,y){
   }
   saveCust(); drawEditor();
 }
-function edResize(d){
-  const ch=curCh(); const nh=ch.h+d;
-  if(nh<6||nh>16) return toast("Height must be 6 to 16.");
-  const ts=edTileset();
-  if(d>0){ ch.rows.push(".".repeat(ch.w));
-    if(ts) ch.tiles.grid.push(Array(ch.w).fill(edPlainChip(ts))); }
-  else{
-    ch.rows.pop(); if(ts) ch.tiles.grid.pop();
-    ch.foes=ch.foes.filter(f=>f.y<nh);
-    ch.deploy=ch.deploy.filter(p=>p[1]<nh);
-  }
-  ch.h=nh; saveCust(); drawEditor();
+/* A chapter's size, typed as a width and a height. Growing adds plain
+   ground, in the tileset's plain chip when the chapter has its own tiles;
+   shrinking drops anything that falls off the edge, and says so. */
+const ED_MIN=5, ED_MAX=40;
+/* THE ENEMY PICKER. 1,820 classes share 35 figures, so pictures alone cannot
+   tell them apart: chips narrow the field by what the builder is thinking of
+   (a weapon, how it moves, before or after promotion), a search finds a
+   name, and the matches show as tiles with their figure. */
+const FP={wep:null,move:null,tier:"base",q:""};
+const FP_MAX=48;
+function foeMatches(){
+  const q=FP.q.trim().toLowerCase();
+  return CLASS_ORDER.filter(k=>{ const c=CLASSES[k];
+    if(FP.tier==="base"&&c.tier) return false;
+    if(FP.tier==="promoted"&&c.tier!=="promoted") return false;
+    if(FP.wep&&!c.wep.includes(FP.wep)) return false;
+    if(FP.move&&c.move!==FP.move) return false;
+    if(q&&!c.name.toLowerCase().includes(q)) return false;
+    return true; });
 }
+function foeTile(k){
+  /* scaled by the figure inside the frame, as on the board, so a flier's
+     small figure in its big frame is not drawn smaller than a footman */
+  const c=CLASSES[k], sp=SPRITES[c.sprite]||{}, w=sp.w||16, h=sp.h||16;
+  const fit=(typeof SPRFIT!=="undefined"&&SPRFIT[c.sprite])||null, drawn=fit?fit[0]:h, gap=fit?fit[1]:0;
+  const sc=Math.min(32/drawn,44/w);
+  return `<div class="foetile${k===ED.foe.cls?" on":""}" onclick="ED.foe.cls='${k}';renderTools()" title="${esc(c.name)}" aria-label="${esc(c.name)}">
+    <div class="foefig"><div style="width:${w}px;height:${h}px;background:url(${sp.e||sp.p}) 0 0 no-repeat;transform-origin:50% 100%;transform:translateY(${(gap*sc).toFixed(1)}px) scale(${sc.toFixed(3)});image-rendering:pixelated"></div></div>
+    <span>${esc(c.name)}</span></div>`;
+}
+function renderFoeGrid(){
+  const el=document.getElementById("fpGrid"); if(!el) return;
+  const m=foeMatches();
+  el.innerHTML=m.slice(0,FP_MAX).map(foeTile).join("")
+    +(m.length>FP_MAX?`<div class="xs dim" style="grid-column:1/-1">Showing ${FP_MAX} of ${m.length}. Pick a weapon or movement, or search, to narrow it down.</div>`
+      :!m.length?`<div class="xs dim" style="grid-column:1/-1">No class matches. Clear a chip or the search.</div>`:"");
+}
+function fpSet(k,v){ FP[k]=FP[k]===v&&k!=="tier"?null:v; renderTools(); }
+function foePickerHTML(){
+  const chip=(k,v,label)=>`<span class="tool ${FP[k]===v?"on":""}" onclick="fpSet('${k}','${v}')">${label}</span>`;
+  const weps=WEAPON_KINDS.filter(w=>CLASS_ORDER.some(k=>CLASSES[k].wep.includes(w)));
+  setTimeout(renderFoeGrid,0);
+  return `<div class="fp">
+    <div class="row wr" style="gap:6px">${[["base","Before promotion"],["promoted","After promotion"],["all","Both"]].map(([v,l])=>chip("tier",v,l)).join("")}</div>
+    <div class="row wr" style="gap:6px;margin-top:6px">${["inf","cav","fly","arm"].map(m=>chip("move",m,MOVE_LABEL[m]||m)).join("")}</div>
+    <div class="row wr" style="gap:6px;margin-top:6px">${weps.map(w=>chip("wep",w,w)).join("")}</div>
+    <input type="search" placeholder="Search class names" value="${esc(FP.q)}" oninput="FP.q=this.value;renderFoeGrid()"
+      style="width:100%;margin-top:8px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:.4em;color:var(--txt);font:inherit">
+    <div id="fpGrid" class="fpgrid"></div></div>`;
+}
+function edSetSize(w,h){
+  const ch=curCh(); if(!ch) return;
+  const nw=w==null?ch.w:Math.round(w), nh=h==null?ch.h:Math.round(h);
+  const back=()=>{ const a=document.getElementById("edW"), b=document.getElementById("edH"); if(a) a.value=ch.w; if(b) b.value=ch.h; };
+  if(!(nw>=ED_MIN&&nw<=ED_MAX&&nh>=ED_MIN&&nh<=ED_MAX)){ back(); return toast(`Width and height must each be ${ED_MIN} to ${ED_MAX}.`); }
+  const ts=edTileset(), plain=ts?edPlainChip(ts):null;
+  ch.rows=Array.from({length:nh},(_,y)=>{ const r=ch.rows[y]||""; return (r+".".repeat(nw)).slice(0,nw); });
+  if(ts&&ch.tiles&&ch.tiles.grid)
+    ch.tiles.grid=Array.from({length:nh},(_,y)=>{ const r=ch.tiles.grid[y]||[]; return Array.from({length:nw},(_,x)=>r[x]!==undefined?r[x]:plain); });
+  const nf=ch.foes.length, nd=ch.deploy.length;
+  ch.foes=ch.foes.filter(f=>f.x<nw&&f.y<nh);
+  ch.deploy=ch.deploy.filter(p=>p[0]<nw&&p[1]<nh);
+  const lost=(nf-ch.foes.length)+(nd-ch.deploy.length);
+  ch.w=nw; ch.h=nh; saveCust(); back(); drawEditor(); edStats();
+  if(lost) toast(`${lost} enemy or start ${lost===1?"square was":"squares were"} off the new edge and removed.`);
+}
+function edResize(d){ const ch=curCh(); if(ch) edSetSize(ch.w,ch.h+d); }   // one row at a time
 function edClear(){
   const ch=curCh();
   ch.rows=Array.from({length:ch.h},()=>".".repeat(ch.w));
