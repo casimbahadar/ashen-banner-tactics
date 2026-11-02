@@ -143,8 +143,6 @@ button.sm{padding:.34em .6em;font-size:.85rem}
    landed on top of the Back button that every screen has there */
 /* a touch screen cannot hover, so the panel is only there for a pointer */
 @media (max-width:899px){ #hoverPanel{display:none} }
-.brand{position:fixed;bottom:calc(6px + env(safe-area-inset-bottom));left:10px;font-family:var(--display);font-size:.7rem;
-  font-style:italic;color:var(--dim);opacity:.45;pointer-events:none;z-index:50}
 
 table.st{width:100%;border-collapse:collapse;font-size:.82rem}
 table.st th,table.st td{padding:4px 4px;text-align:center;border-bottom:1px solid #21243a}
@@ -323,7 +321,6 @@ table.roster tbody tr:hover{background:var(--panel2)}
 body.tabs .screen.hub{padding-bottom:calc(var(--tabh) + var(--s5) + env(safe-area-inset-bottom))}
 body.tabs .toast{bottom:calc(var(--tabh) + 16px + env(safe-area-inset-bottom))}
 /* the faint name in the corner says what the title above already says */
-body.tabs .brand{display:none}
 /* the pop-up message, on the same scale; hidden properly when not showing,
    so a screen reader does not read out an old one */
 .toast{padding:var(--s2) var(--s3);visibility:hidden;font-size:.95rem;
@@ -410,7 +407,7 @@ button{min-width:44px}
   gap:var(--s2);padding:var(--s3) var(--s1) 0}
 /* the remaining text that sat under 14px; the board's own unit labels stay
    small on purpose, since they sit inside 34px squares */
-.brand,.alloc .nm,.stepper .v,table.roster,table.roster th,.gate,.fc .hdr,.fc .nums,
+.alloc .nm,.stepper .v,table.roster,table.roster th,.gate,.fc .hdr,.fc .nums,
 .fc .nums div span,#log,#log .rn,.chapno{font-size:.875rem}
 
 /* --------------------------------------------------------------------------
@@ -555,12 +552,16 @@ body.instory .notstory{display:none}
 .foetile span{font-size:11px;line-height:1.15;text-align:center;word-break:break-word}
 .foefig{width:44px;height:40px;display:flex;align-items:flex-end;justify-content:center;overflow:hidden}
 .foefig>div{flex:none}
+
+/* the enemy picker's strip on a wide screen, and a wider builder on a large one */
+#edPickWide.fpwide{margin-top:12px}
+#edPickWide .fpgrid{max-height:420px;grid-template-columns:repeat(auto-fill,minmax(84px,1fr))}
+@media (min-width:1200px){ body:has(#bedit.on) .wrap{max-width:1240px} }
 </style>
 </head>
 <body>
 <div class="wrap">
 
-<div class="brand">Ashen Banner</div>
 <!-- The home screen has one job: get a returning player back into their
      campaign in one tap. Everything else lives one tab away, in the bar along
      the bottom where a thumb reaches. It replaced a menu of eight equal
@@ -1393,6 +1394,12 @@ body.instory .notstory{display:none}
 
   <div class="edgrid">
   <div class="edcanvas">
+  <div class="row wr" style="gap:8px;margin:0 0 8px">
+    <label class="xs dim" style="align-self:center">Width <input id="edW" type="number" min="5" max="40" inputmode="numeric" onchange="edSetSize(+this.value,null)" style="width:64px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:.3em;color:var(--txt);font:inherit"></label>
+    <label class="xs dim" style="align-self:center">Height <input id="edH" type="number" min="5" max="40" inputmode="numeric" onchange="edSetSize(null,+this.value)" style="width:64px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:.3em;color:var(--txt);font:inherit"></label>
+    <button class="sm" onclick="edClear()">Clear map</button>
+    <span class="xs dim" id="edStats" style="align-self:center"></span>
+  </div>
   <div id="edWrap" style="overflow:auto;border:1px solid var(--line);border-radius:8px;background:#08090d">
     <div id="edGrid"></div>
   </div>
@@ -1417,12 +1424,7 @@ body.instory .notstory{display:none}
   </div>
   </div>
   </div>
-  <div class="row wr" style="gap:8px;margin:8px 0 20px">
-    <label class="xs dim" style="align-self:center">Width <input id="edW" type="number" min="5" max="40" inputmode="numeric" onchange="edSetSize(+this.value,null)" style="width:64px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:.3em;color:var(--txt);font:inherit"></label>
-    <label class="xs dim" style="align-self:center">Height <input id="edH" type="number" min="5" max="40" inputmode="numeric" onchange="edSetSize(null,+this.value)" style="width:64px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:.3em;color:var(--txt);font:inherit"></label>
-    <button class="sm" onclick="edClear()">Clear map</button>
-    <span class="xs dim" id="edStats" style="align-self:center"></span>
-  </div>
+  <div id="edPickWide"></div>
 </section>
 
 </div>
@@ -10097,6 +10099,7 @@ function renderTools(){
   t.innerHTML=[["terrain",ts?"Chips":"Terrain"],["foe","Enemy"],["deploy","Deploy"],["erase","Erase"]]
     .map(([k,n])=>`<span class="tool ${ED.tool===k?'on':''}" onclick="ED.tool='${k}';renderTools();drawEditor()">${n}</span>`).join("");
   const sub=document.getElementById("edSub"); sub.innerHTML="";
+  const strip=document.getElementById("edPickWide"); if(strip){ strip.innerHTML=""; strip.className=""; }
   const hint=document.getElementById("edHint");
   if(ED.tool==="terrain"&&ts){
     if(ED.chip===undefined||!ts.tags[ED.chip]) ED.chip=edPlainChip(ts);
@@ -10117,7 +10120,9 @@ function renderTools(){
     const kinds=CLASSES[ED.foe.cls].wep;
     const wl=Object.values(WEAPONS).filter(w=>kinds.includes(w.kind));
     if(!wl.some(w=>w.id===ED.foe.w)) ED.foe.w=wl[0].id;
-    sub.innerHTML=foePickerHTML()+
+    const wideP=edWide()&&strip;
+    if(wideP){ strip.className="card fpwide"; strip.innerHTML=`<div class="row spread" style="margin-bottom:6px"><b>Choose an enemy</b><span class="xs dim">${foeMatches().length} classes match</span></div>`+foePickerHTML(); }
+    sub.innerHTML=(wideP?"":foePickerHTML())+
       `<div class="xs" style="width:100%;margin:6px 0 2px">Placing <b>${esc(CLASSES[ED.foe.cls].name)}</b></div>
        <select onchange="ED.foe.w=this.value" style="background:var(--panel2);border:1px solid var(--line);
         border-radius:8px;padding:.3em;color:var(--txt);font:inherit;font-size:.875rem">
@@ -10220,6 +10225,11 @@ const ED_MIN=5, ED_MAX=40;
    (a weapon, how it moves, before or after promotion), a search finds a
    name, and the matches show as tiles with their figure. */
 const FP={wep:null,move:null,tier:"base",q:""};
+/* the builder sits in two columns from 900px; there the picker gets a strip
+   of its own under the board, and on a phone it stays in the tool panel */
+const ED_WIDE=typeof matchMedia==="function"?matchMedia("(min-width:900px)"):null;
+function edWide(){ return !!(ED_WIDE&&ED_WIDE.matches); }
+if(ED_WIDE&&ED_WIDE.addEventListener) ED_WIDE.addEventListener("change",()=>{ const e=document.getElementById("bedit"); if(e&&e.classList.contains("on")) renderTools(); });
 const FP_MAX=48;
 function foeMatches(){
   const q=FP.q.trim().toLowerCase();
@@ -10244,6 +10254,7 @@ function foeTile(k){
 function renderFoeGrid(){
   const el=document.getElementById("fpGrid"); if(!el) return;
   const m=foeMatches();
+  const cnt=document.querySelector("#edPickWide .row.spread .xs"); if(cnt) cnt.textContent=`${m.length} ${m.length===1?"class matches":"classes match"}`;
   el.innerHTML=m.slice(0,FP_MAX).map(foeTile).join("")
     +(m.length>FP_MAX?`<div class="xs dim" style="grid-column:1/-1">Showing ${FP_MAX} of ${m.length}. Pick a weapon or movement, or search, to narrow it down.</div>`
       :!m.length?`<div class="xs dim" style="grid-column:1/-1">No class matches. Clear a chip or the search.</div>`:"");
